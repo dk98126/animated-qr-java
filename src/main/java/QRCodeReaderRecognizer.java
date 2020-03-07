@@ -30,24 +30,24 @@ public class QRCodeReaderRecognizer {
         JButton readQrButton = new JButton();
         JLabel label = new JLabel();
         readQrButton.addActionListener(e -> {
-            BufferedImage bufferedImage = webcam.getImage();
-            Map<DecodeHintType, Object> hintsMap = new EnumMap<>(DecodeHintType.class);
-            hintsMap.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-            hintsMap.put(DecodeHintType.POSSIBLE_FORMATS, List.of(BarcodeFormat.QR_CODE));
+            Map<DecodeHintType, Object> hintsMap = getQrHintMap();
 
-            QRCodeReader qrCodeReader = new QRCodeReader();
-            LuminanceSource luminanceSource = new BufferedImageLuminanceSource(bufferedImage);
-            BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
-            Result result = null;
-            try {
-                result = qrCodeReader.decode(binaryBitmap, hintsMap);
-            } catch (NotFoundException | ChecksumException | FormatException ex) {
-                ex.printStackTrace();
+            while (true) {
+                BufferedImage bufferedImage = webcam.getImage();
+                QRCodeReader qrCodeReader = new QRCodeReader();
+                LuminanceSource luminanceSource = new BufferedImageLuminanceSource(bufferedImage);
+                BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
+                Result result = null;
+                try {
+                    result = qrCodeReader.decode(binaryBitmap, hintsMap);
+                } catch (NotFoundException | ChecksumException | FormatException ex) {
+                    ex.printStackTrace();
+                }
+                String text = Objects.requireNonNull(result).getText();
+                textArea.append(text + "\n");
+                BufferedImage miniBufferedImage = resize(bufferedImage, (int) (bufferedImage.getWidth() * 0.2), (int) (bufferedImage.getHeight() * 0.2));
+                label.setIcon(new ImageIcon(miniBufferedImage));
             }
-            String text = Objects.requireNonNull(result).getText();
-            textArea.append(text + "\n");
-            BufferedImage miniBufferedImage = resize(bufferedImage, (int) (bufferedImage.getWidth() * 0.2), (int) (bufferedImage.getHeight() * 0.2));
-            label.setIcon(new ImageIcon(miniBufferedImage));
         });
 
         readQrButton.setText("Прочитать QR code");
@@ -70,6 +70,13 @@ public class QRCodeReaderRecognizer {
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.pack();
         window.setVisible(true);
+    }
+
+    private static Map<DecodeHintType, Object> getQrHintMap() {
+        Map<DecodeHintType, Object> hintsMap = new EnumMap<>(DecodeHintType.class);
+        hintsMap.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+        hintsMap.put(DecodeHintType.POSSIBLE_FORMATS, List.of(BarcodeFormat.QR_CODE));
+        return hintsMap;
     }
 
     public static BufferedImage resize(BufferedImage img, int newW, int newH) {
