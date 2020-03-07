@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class QRCodeReaderRecognizer {
-    public static void main(String[] args) throws FormatException, ChecksumException, NotFoundException {
+    public static void main(String[] args) {
 
         Webcam webcam = Webcam.getDefault();
         webcam.setViewSize(WebcamResolution.VGA.getSize());
