@@ -9,9 +9,12 @@ import org.apache.commons.lang3.ArrayUtils;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -22,11 +25,8 @@ import java.util.List;
 @Slf4j
 public class QRCodeGenerator {
     private static final String QR_CODE_IMAGE_PATH = "qr/MyQRCode.gif";
-    private static final String experimentalString = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static final int MAX_BYTES_PER_SINGLE_QR_FOR_PAYLOAD = 248;
     private static final int SINGLE_META_INFO_SIZE = 4;
-    private static final int ALL_IMAGES_INT_SIZE = SINGLE_META_INFO_SIZE;
-    private static final int IMAGE_ORDER_INT_SIZE = SINGLE_META_INFO_SIZE;
 
     private static void generateQRCodeImage(String data, int width, int height, String filePath)
             throws WriterException, IOException {
@@ -58,14 +58,14 @@ public class QRCodeGenerator {
         for (i = 0; i < quotient; i++) {
             int payloadStart = i * divider;
             int payloadEnd = (i * divider + divider);
-            byte[] payloadWithInfo = formPayloadWithMetaInfo(bytes, imagesAmount, i, payloadStart, payloadEnd);
+            byte[] payloadWithInfo = formPayloadWithMetaInfo(bytes, imagesAmount, i + 1, payloadStart, payloadEnd);
             String tmp = new String(payloadWithInfo, StandardCharsets.UTF_8);
             bufferedImages.add(getBufferedImage(tmp, width, height));
         }
         if (residue != 0) {
             int payloadStart = i * divider;
             int payloadEnd = (i * divider + residue);
-            byte[] payloadWithInfo = formPayloadWithMetaInfo(bytes, imagesAmount, i, payloadStart, payloadEnd);
+            byte[] payloadWithInfo = formPayloadWithMetaInfo(bytes, imagesAmount, i + 1, payloadStart, payloadEnd);
             String tmp = new String(payloadWithInfo, StandardCharsets.UTF_8);
             bufferedImages.add(getBufferedImage(tmp, width, height));
         }
@@ -77,10 +77,10 @@ public class QRCodeGenerator {
         ByteBuffer bb = ByteBuffer.allocate(SINGLE_META_INFO_SIZE);
         bb.order(ByteOrder.LITTLE_ENDIAN);
         bb.putInt(imageOrder);
-        byte[] info = bb.array();
+        byte[] info = Arrays.copyOf(bb.array(), bb.array().length);
         bb.clear();
         bb.putInt(imagesAmount);
-        info = ArrayUtils.addAll(info, bb.array());
+        info = ArrayUtils.addAll(info, Arrays.copyOf(bb.array(), bb.array().length));
         return ArrayUtils.addAll(info, payload);
     }
 
@@ -93,8 +93,11 @@ public class QRCodeGenerator {
 
     public static void main(String[] args) {
         try {
-            generateQRCodeImage(experimentalString, 1000, 1000, QR_CODE_IMAGE_PATH);
-        } catch (WriterException | IOException e) {
+            File file = new File(ClassLoader.getSystemClassLoader().getResource("testimage.jpg").toURI());
+            BufferedInputStream is = new BufferedInputStream(new FileInputStream(file));
+            String stringToWrite = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            generateQRCodeImage(stringToWrite, 1000, 1000, QR_CODE_IMAGE_PATH);
+        } catch (WriterException | IOException | URISyntaxException e) {
             log.error("Could not generate QR code");
             e.printStackTrace();
         }
