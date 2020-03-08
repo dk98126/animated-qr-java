@@ -9,35 +9,36 @@ import org.apache.commons.lang3.ArrayUtils;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 @Slf4j
 public class QRCodeGenerator {
     private static final String QR_CODE_IMAGE_PATH = "qr/MyQRCode.gif";
-    private static final int MAX_BYTES_PER_SINGLE_QR_FOR_PAYLOAD = 248;
+    private static final int MAX_BYTES_PER_SINGLE_QR_FOR_PAYLOAD = 1016;
     private static final int SINGLE_META_INFO_SIZE = 4;
+    private static final int PERIOD_BETWEEN_FRAMES = 200;
 
-    private static void generateQRCodeImage(String data, int width, int height, String filePath)
+    private static void generateQRCodeImage(byte[] data, int width, int height, String filePath)
             throws WriterException, IOException {
         List<BufferedImage> bufferedImages = getBufferedImages(data, width, height);
-        writeGif(filePath, bufferedImages, 100, true);
+        writeGif(filePath, bufferedImages, PERIOD_BETWEEN_FRAMES, true);
     }
 
     private static void writeGif(String filePath, List<BufferedImage> bufferedImages, int timeBetweenFramesMS, boolean loopContinuously) throws IOException {
         if (!bufferedImages.isEmpty()) {
             ImageOutputStream outputStream = new FileImageOutputStream(new File(filePath));
-            GifSequenceWriter writer = new GifSequenceWriter(outputStream, bufferedImages.get(0).getType(), timeBetweenFramesMS, loopContinuously);
+            GifSequenceWriter writer = new GifSequenceWriter(outputStream, BufferedImage.TYPE_BYTE_BINARY, timeBetweenFramesMS, loopContinuously);
             for (BufferedImage bufferedImage : bufferedImages) {
                 writer.writeToSequence(bufferedImage);
             }
@@ -46,9 +47,8 @@ public class QRCodeGenerator {
         }
     }
 
-    private static List<BufferedImage> getBufferedImages(String data, int width, int height) throws WriterException {
-        byte[] bytes = data.getBytes();
-        int length = bytes.length;
+    private static List<BufferedImage> getBufferedImages(byte[] data, int width, int height) throws WriterException {
+        int length = data.length;
         int divider = MAX_BYTES_PER_SINGLE_QR_FOR_PAYLOAD;
         int quotient = length / divider;
         int residue = length % divider;
@@ -58,15 +58,15 @@ public class QRCodeGenerator {
         for (i = 0; i < quotient; i++) {
             int payloadStart = i * divider;
             int payloadEnd = (i * divider + divider);
-            byte[] payloadWithInfo = formPayloadWithMetaInfo(bytes, imagesAmount, i + 1, payloadStart, payloadEnd);
-            String tmp = new String(payloadWithInfo, StandardCharsets.UTF_8);
+            byte[] payloadWithInfo = formPayloadWithMetaInfo(data, imagesAmount, i + 1, payloadStart, payloadEnd);
+            String tmp = Base64.getEncoder().encodeToString(payloadWithInfo);
             bufferedImages.add(getBufferedImage(tmp, width, height));
         }
         if (residue != 0) {
             int payloadStart = i * divider;
             int payloadEnd = (i * divider + residue);
-            byte[] payloadWithInfo = formPayloadWithMetaInfo(bytes, imagesAmount, i + 1, payloadStart, payloadEnd);
-            String tmp = new String(payloadWithInfo, StandardCharsets.UTF_8);
+            byte[] payloadWithInfo = formPayloadWithMetaInfo(data, imagesAmount, i + 1, payloadStart, payloadEnd);
+            String tmp = Base64.getEncoder().encodeToString(payloadWithInfo);
             bufferedImages.add(getBufferedImage(tmp, width, height));
         }
         return bufferedImages;
@@ -95,8 +95,7 @@ public class QRCodeGenerator {
         try {
             File file = new File(ClassLoader.getSystemClassLoader().getResource("testimage.jpg").toURI());
             BufferedInputStream is = new BufferedInputStream(new FileInputStream(file));
-            String stringToWrite = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            generateQRCodeImage(stringToWrite, 1000, 1000, QR_CODE_IMAGE_PATH);
+            generateQRCodeImage(is.readAllBytes(), 1000, 1000, QR_CODE_IMAGE_PATH);
         } catch (WriterException | IOException | URISyntaxException e) {
             log.error("Could not generate QR code");
             e.printStackTrace();

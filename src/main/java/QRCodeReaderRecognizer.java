@@ -9,12 +9,14 @@ import com.google.zxing.qrcode.QRCodeReader;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class QRCodeReaderRecognizer {
@@ -34,7 +36,7 @@ public class QRCodeReaderRecognizer {
         JLabel label = new JLabel();
         readQrButton.addActionListener(e -> {
             Map<DecodeHintType, Object> hintsMap = getQrHintMap();
-            Map<Integer, String> gifParts = new HashMap<>();
+            Map<Integer, byte[]> gifParts = new HashMap<>();
             int gifPartsNumber = -1;
             while (gifParts.size() != gifPartsNumber) {
                 BufferedImage bufferedImage = webcam.getImage();
@@ -54,18 +56,19 @@ public class QRCodeReaderRecognizer {
                 textArea.append(text + "\n");
                 BufferedImage miniBufferedImage = resize(bufferedImage, (int) (bufferedImage.getWidth() * 0.2), (int) (bufferedImage.getHeight() * 0.2));
                 label.setIcon(new ImageIcon(miniBufferedImage));
+                byte[] data = Base64.getDecoder().decode(text);
                 int partN = ByteBuffer
-                        .wrap(Arrays.copyOf(text.getBytes(StandardCharsets.UTF_8), 4))
+                        .wrap(Arrays.copyOf(data, 4))
                         .order(ByteOrder.LITTLE_ENDIAN)
                         .getInt();
                 if (gifPartsNumber == -1) {
                     gifPartsNumber = ByteBuffer
-                            .wrap(Arrays.copyOfRange(text.getBytes(StandardCharsets.UTF_8), 4, 8))
+                            .wrap(Arrays.copyOfRange(data, 4, 8))
                             .order(ByteOrder.LITTLE_ENDIAN)
                             .getInt();
                 }
                 System.out.println("Считана часть №" + partN + ", всего: " + gifPartsNumber);
-                gifParts.put(partN, text);
+                gifParts.put(partN, data);
                 System.out.println("Всё чуитс!");
             }
             File file = new File(System.getProperty("java.io.tmpdir") + "/gifRecognizedFile");
@@ -73,12 +76,12 @@ public class QRCodeReaderRecognizer {
                 BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(file));
                 List<Integer> keys = new ArrayList<>(gifParts.keySet());
                 keys.sort(Integer::compareTo);
-                List<String> values = keys
+                List<byte[]> values = keys
                         .stream()
-                        .map(key -> gifParts.get(key).substring(8))
+                        .map(key -> Arrays.copyOfRange(gifParts.get(key), 8, gifParts.get(key).length))
                         .collect(Collectors.toList());
-                for (String x : values) {
-                    os.write(x.getBytes(StandardCharsets.UTF_8));
+                for (byte[] x : values) {
+                    os.write(x);
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
