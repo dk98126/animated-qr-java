@@ -25,9 +25,9 @@ import java.util.List;
 @Slf4j
 public class QRCodeGenerator {
     private static final String QR_CODE_IMAGE_PATH = "qr/MyQRCode.gif";
-    private static final int MAX_BYTES_PER_SINGLE_QR_FOR_PAYLOAD = 1016;
+    private static final int MAX_BYTES_PER_SINGLE_QR_FOR_PAYLOAD = 2048;
     private static final int SINGLE_META_INFO_SIZE = 4;
-    private static final int PERIOD_BETWEEN_FRAMES = 200;
+    private static final int PERIOD_BETWEEN_FRAMES = 300;
 
     private static void generateQRCodeImage(byte[] data, int width, int height, String filePath)
             throws WriterException, IOException {
@@ -95,7 +95,7 @@ public class QRCodeGenerator {
         try {
             File file = new File(ClassLoader.getSystemClassLoader().getResource("testimage.jpg").toURI());
             BufferedInputStream is = new BufferedInputStream(new FileInputStream(file));
-            generateQRCodeImage(is.readAllBytes(), 1000, 1000, QR_CODE_IMAGE_PATH);
+            generateQRCodeImage(is.readAllBytes(), 50, 50, QR_CODE_IMAGE_PATH);
         } catch (WriterException | IOException | URISyntaxException e) {
             log.error("Could not generate QR code");
             e.printStackTrace();
