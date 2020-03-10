@@ -82,6 +82,8 @@ public class QRCodeReaderRecognizer {
                 for (byte[] x : values) {
                     os.write(x);
                 }
+                os.flush();
+                os.close();
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
