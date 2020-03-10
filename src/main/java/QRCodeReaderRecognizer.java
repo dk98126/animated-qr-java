@@ -67,11 +67,10 @@ public class QRCodeReaderRecognizer {
                             .order(ByteOrder.LITTLE_ENDIAN)
                             .getInt();
                 }
-                System.out.println("Считана часть №" + partN + ", всего: " + gifPartsNumber);
+                System.out.println("Считана часть №" + partN + ", всего: " + gifPartsNumber + " осталось: " + (gifPartsNumber - gifParts.size()));
                 gifParts.put(partN, data);
-                System.out.println("Всё чуитс!");
             }
-            File file = new File(System.getProperty("java.io.tmpdir") + "/gifRecognizedFile");
+            File file = new File("gifRecognizedFile");
             try {
                 BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(file));
                 List<Integer> keys = new ArrayList<>(gifParts.keySet());
