@@ -71,7 +71,7 @@ public class QRCodeGenerator {
 
     public static void main(String[] args) {
         try {
-            generateQRCodeImage(experimentalString, 1000, 1000, QR_CODE_IMAGE_PATH);
+            generateQRCodeImage(experimentalString, 100, 100, QR_CODE_IMAGE_PATH);
         } catch (WriterException | IOException e) {
             log.error("Could not generate QR code");
             e.printStackTrace();
