@@ -1,84 +1,52 @@
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-
-import javax.imageio.ImageIO;
 
 public class Img2Ascii {
+    private BufferedImage resize(BufferedImage img, int newW, int newH) {
+        Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
+        BufferedImage dimg = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB);
 
-    private BufferedImage img;
-    private double pixval;
-    private PrintWriter prntwrt;
-    private FileWriter filewrt;
+        Graphics2D g2d = dimg.createGraphics();
+        g2d.drawImage(tmp, 0, 0, null);
+        g2d.dispose();
 
-    public Img2Ascii() {
-        try {
-            prntwrt = new PrintWriter(filewrt = new FileWriter("asciiart.txt",
-                    true));
-        } catch (IOException ex) {
-        }
+        return dimg;
     }
 
-    public void convertToAscii(String imgname) {
-        try {
-            img = ImageIO.read(new File(imgname));
-        } catch (IOException e) {
-        }
-
+    public String convertToAscii(BufferedImage img, int width, int height) {
+        img = resize(img, width, height);
+        StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < img.getHeight(); i++) {
             for (int j = 0; j < img.getWidth(); j++) {
-                Color pixcol = new Color(img.getRGB(j, i));
-                pixval = (((pixcol.getRed() * 0.30) + (pixcol.getBlue() * 0.59) + (pixcol
+                Color pixelColor = new Color(img.getRGB(j, i));
+                double pixelValue = (((pixelColor.getRed() * 0.30) + (pixelColor.getBlue() * 0.59) + (pixelColor
                         .getGreen() * 0.11)));
-                print(strChar(pixval));
+                stringBuilder.append(strChar(pixelValue));
             }
-            try {
-                prntwrt.println("");
-                prntwrt.flush();
-                filewrt.flush();
-            } catch (Exception ex) {
-            }
+            stringBuilder.append("\n");
         }
+        return stringBuilder.toString();
     }
 
-    public String strChar(double g) {
-        String str = " ";
-        if (g >= 240) {
-            str = " ";
-        } else if (g >= 210) {
-            str = ".";
-        } else if (g >= 190) {
-            str = "*";
-        } else if (g >= 170) {
-            str = "+";
-        } else if (g >= 120) {
-            str = "^";
-        } else if (g >= 110) {
-            str = "&";
-        } else if (g >= 80) {
-            str = "8";
-        } else if (g >= 60) {
-            str = "#";
+    private char strChar(double g) {
+        if (g <= 60) {
+            return ' ';
+        } else if (g <= 80) {
+            return '.';
+        } else if (g <= 110) {
+            return '*';
+        } else if (g <= 120) {
+            return '+';
+        } else if (g <= 170) {
+            return '^';
+        } else if (g <= 190) {
+            return '&';
+        } else if (g <= 210) {
+            return '8';
+        } else if (g <= 240) {
+            return '#';
         } else {
-            str = "@";
+            return '@';
         }
-        return str;
-    }
-
-    public void print(String str) {
-        try {
-            prntwrt.print(str);
-            prntwrt.flush();
-            filewrt.flush();
-        } catch (Exception ex) {
-        }
-    }
-
-    public static void main(String[] args) {
-        Img2Ascii obj = new Img2Ascii();
-        obj.convertToAscii("/home/ilya/IdeaProjects/animated-qr-java/qr/MyQRCode.gif");//  полный путь до картинки или поместить картинку в папку проекта
     }
 }
