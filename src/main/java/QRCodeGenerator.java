@@ -9,7 +9,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
-import java.awt.image.IndexColorModel;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,7 +28,7 @@ public class QRCodeGenerator {
     private static final int SINGLE_META_INFO_SIZE = 4;
     private static final int PERIOD_BETWEEN_FRAMES = 100;
 
-    private static void generateQRCodeImage(byte[] data, int width, int height, String filePath)
+    private void generateQRCodeImage(byte[] data, int width, int height, String filePath)
             throws WriterException, IOException {
         List<BufferedImage> bufferedImages = getBufferedImages(data, width, height);
         writeGif(filePath, bufferedImages, PERIOD_BETWEEN_FRAMES, true);
@@ -47,7 +46,7 @@ public class QRCodeGenerator {
         }
     }
 
-    private static List<BufferedImage> getBufferedImages(byte[] data, int width, int height) throws WriterException {
+    public List<BufferedImage> getBufferedImages(byte[] data, int width, int height) throws WriterException {
         int length = data.length;
         int divider = MAX_BYTES_PER_SINGLE_QR_FOR_PAYLOAD;
         int quotient = length / divider;
@@ -93,9 +92,10 @@ public class QRCodeGenerator {
 
     public static void main(String[] args) {
         try {
+            QRCodeGenerator qrCodeGenerator = new QRCodeGenerator();
             File file = new File(ClassLoader.getSystemClassLoader().getResource("testimage.jpg").toURI());
             BufferedInputStream is = new BufferedInputStream(new FileInputStream(file));
-            generateQRCodeImage(is.readAllBytes(), 1024, 1024, QR_CODE_IMAGE_PATH);
+            qrCodeGenerator.generateQRCodeImage(is.readAllBytes(), 1024, 1024, QR_CODE_IMAGE_PATH);
         } catch (WriterException | IOException | URISyntaxException e) {
             log.error("Could not generate QR code");
             e.printStackTrace();
